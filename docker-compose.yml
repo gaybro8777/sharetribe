@@ -1,13 +1,19 @@
-version: '2'
+version: '3.1'
+
 services:
-  web:
-    build: .
+  mail:
+    image: mailhog/mailhog
     ports:
-      - "3000:3000"
-    env_file: .env
+      - 8082:8025
+  sharetribe:
+    build: ./sharetribe/
+    image: kw/sharetribe:latest
+    environment:
+      - MEMCACHIER_GREEN_SERVERS=memcached
+    ports:
+      - 8080:3000
   worker:
-    build: .
-    env_file: .env
+    image: kw/sharetribe:latest
     environment:
       - QUEUES=default,paperclip,mailers
       - MAGICK_MAP_LIMIT=64MiB
@@ -16,7 +22,16 @@ services:
     command: bundle exec rake jobs:work
   memcached:
     image: memcached:latest
+  db:
+    image: mysql:5
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - 3306:3306
+
 networks:
   default:
     external:
-      name: sharetribe
+      name: sharetribe        
+        

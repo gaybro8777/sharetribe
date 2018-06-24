@@ -1,17 +1,14 @@
-FROM ruby:2.3.4
+FROM ubuntu:xenial
+MAINTAINER Kai Wegner <kw+dockerfile@o511.de>
 
-MAINTAINER Sharetribe Team <team@sharetribe.com>
-
-ENV REFRESHED_AT 2016-11-08
+ENV DEBIAN_FRONTEND noninteractive
 
 RUN apt-get update \
+    && apt-get install -y software-properties-common \
     && apt-get dist-upgrade -y
+RUN add-apt-repository ppa:builds/sphinxsearch-rel22 && apt-get update 
+RUN apt-get install -y software-properties-common libxml2 build-essential libmysqlclient-dev libxslt-dev libxml2-dev ruby ruby-dev nginx mysql-client sphinxsearch imagemagick curl git tzdata sendmail
 
-#
-# Node (based on official docker node image)
-#
-
-# gpg keys listed at https://github.com/nodejs/node#release-team
 RUN set -ex \
   && for key in \
     9554F04D7259F04124DE6B476D5A82AC7E37093B \
@@ -27,7 +24,6 @@ RUN set -ex \
     gpg --keyserver pgp.mit.edu --recv-keys "$key" || \
     gpg --keyserver keyserver.pgp.com --recv-keys "$key" ; \
   done
-
 ENV NPM_CONFIG_LOGLEVEL info
 ENV NODE_VERSION 7.8.0
 
@@ -39,35 +35,24 @@ RUN curl -SLO "https://nodejs.org/dist/v$NODE_VERSION/node-v$NODE_VERSION-linux-
   && rm "node-v$NODE_VERSION-linux-x64.tar.xz" SHASUMS256.txt.asc SHASUMS256.txt \
   && ln -s /usr/local/bin/node /usr/local/bin/nodejs
 
-#
-# Sharetribe
-#
-
-# Install nginx - used to serve maintenance mode page
-RUN apt-get install -y nginx
-
 # Install latest bundler
 ENV BUNDLE_BIN=
 RUN gem install bundler
 
 # Run as non-privileged user
 RUN useradd -m -s /bin/bash app \
-	&& mkdir /opt/app /opt/app/client /opt/app/log /opt/app/tmp && chown -R app:app /opt/app
+  && mkdir /opt/app /opt/app/client /opt/app/log /opt/app/tmp && chown -R app:app /opt/app
 
+USER app
 WORKDIR /opt/app
+# Create directory for Sharetribe
 
-COPY Gemfile /opt/app
-COPY Gemfile.lock /opt/app
+RUN git clone https://github.com/kai-wegner/sharetribe.git
+WORKDIR /opt/app/sharetribe
 
 ENV RAILS_ENV production
 
-USER app
-
 RUN bundle install --deployment --without test,development
-
-COPY package.json /opt/app/
-COPY client/package.json /opt/app/client/
-COPY client/customloaders/customfileloader /opt/app/client/customloaders/customfileloader
 
 ENV NODE_ENV production
 ENV NPM_CONFIG_LOGLEVEL error
@@ -75,17 +60,9 @@ ENV NPM_CONFIG_PRODUCTION true
 
 RUN npm install
 
-COPY . /opt/app
-
 EXPOSE 3000
+CMD ["script/startup_docker.sh"]
 
-CMD ["script/startup.sh"]
-
-#
-# Assets
-#
-
-# Fix ownership of directories that need to be writable
 USER root
 RUN mkdir -p \
           app/assets/webpack \
@@ -99,8 +76,4 @@ RUN mkdir -p \
        public/webpack
 USER app
 
-# If assets.tar.gz file exists in project root
-# assets will be extracted from there.
-# Otherwise, assets will be compiled with `rake assets:precompile`.
-# Useful for caching assets between builds.
 RUN script/prepare-assets.sh

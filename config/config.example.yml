@@ -7,7 +7,6 @@
 #
 # Copy this file from `config/config.example.yml` to `config/config.yml`
 #
-
 development:
   # Add local `development` environment configuration overrides here
 
@@ -18,4 +17,4 @@ staging:
   # Add local `staging` environment configuration overrides here
 
 production:
-  # Add local `production` environment configuration overrides here
+  api_enabled: true
