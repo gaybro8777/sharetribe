@@ -7,7 +7,7 @@ RUN apt-get update \
     && apt-get install -y software-properties-common \
     && apt-get dist-upgrade -y
 RUN add-apt-repository ppa:builds/sphinxsearch-rel22 && apt-get update 
-RUN apt-get install -y software-properties-common libxml2 build-essential libmysqlclient-dev libxslt-dev libxml2-dev ruby ruby-dev nginx mysql-client sphinxsearch imagemagick curl git tzdata sendmail
+RUN apt-get install -y software-properties-common libxml2 build-essential libmysqlclient-dev libxslt-dev libxml2-dev ruby ruby-dev nginx mysql-client sphinxsearch imagemagick curl git tzdata 
 
 RUN set -ex \
   && for key in \

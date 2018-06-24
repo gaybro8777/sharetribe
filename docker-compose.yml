@@ -6,7 +6,7 @@ services:
     ports:
       - 8082:8025
   sharetribe:
-    build: ./sharetribe/
+    build: .
     image: kw/sharetribe:latest
     environment:
       - MEMCACHIER_GREEN_SERVERS=memcached
