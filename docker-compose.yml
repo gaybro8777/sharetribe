@@ -8,18 +8,26 @@ services:
   sharetribe:
     build: .
     image: kw/sharetribe:latest
+    volumes:
+      - sharetribe_data:/opt/app/sharetribe    
     environment:
       - MEMCACHIER_GREEN_SERVERS=memcached
     ports:
       - 8080:3000
   worker:
     image: kw/sharetribe:latest
+    depends_on: 
+      - sharetribe
+    volumes:
+      - sharetribe_data:/opt/app/sharetribe
     environment:
       - QUEUES=default,paperclip,mailers
       - MAGICK_MAP_LIMIT=64MiB
       - MAGICK_MEMORY_LIMIT=256MiB
       - MAGICK_TIME_LIMIT=30
-    command: bundle exec rake jobs:work
+      - MEMCACHIER_GREEN_SERVERS=memcached
+    command: /opt/app/sharetribe/script/startup_docker.sh worker
+    restart: on-failure
   memcached:
     image: memcached:latest
   db:
@@ -32,6 +40,7 @@ services:
 
 networks:
   default:
-    external:
-      name: sharetribe        
+
+volumes:
+  sharetribe_data:
         

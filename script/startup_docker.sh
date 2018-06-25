@@ -14,15 +14,15 @@ case "$APP_MODE" in
             rm -f tmp/pids/server.pid
 
             if [ ! -e $CONTAINER_ALREADY_STARTED ]; then
-              touch $CONTAINER_ALREADY_STARTED
               echo "-- First container startup --"
               cp config/config.example.yml config/config.yml
               cp config/database.example.yml config/database.yml
 
-              GEN_SECRETBASE=`exec bundle exec rake secret`
+              GEN_SECRETBASE=`bundle exec rake secret`
               echo "  secret_key_base: $GEN_SECRETBASE" >> config/config.yml
               bundle exec rake db:create db:structure:load && \
               bundle exec rake ts:index && \
+              touch $CONTAINER_ALREADY_STARTED && \
               exec bundle exec passenger \
                  start \
                  -p "${PORT-3000}" \
@@ -45,18 +45,12 @@ case "$APP_MODE" in
             # Do nothing
             exec sleep 86400
         else
-            if [ ! -e $CONTAINER_ALREADY_STARTED ]; then
-              touch $CONTAINER_ALREADY_STARTED
-              echo "-- First container startup --"
-              cp config/config.example.yml config/config.yml
-              cp config/database.example.yml config/database.yml
-
-              GEN_SECRETBASE=`exec bundle exec rake secret`
-              echo "  secret_key_base: $GEN_SECRETBASE" >> config/config.yml              
-            else
-              echo "-- Not first container startup --"
+            if [ -e $CONTAINER_ALREADY_STARTED ]; then
+              exec bundle exec rake jobs:work
+            else 
+              sleep 10s
+              exit 1
             fi
-            exec bundle exec rake jobs:work
         fi
         ;;
     *)

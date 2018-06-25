@@ -47,6 +47,7 @@ USER app
 WORKDIR /opt/app
 # Create directory for Sharetribe
 
+ADD https://api.github.com/repos/kai-wegner/sharetribe/git/refs/heads/master version.json
 RUN git clone https://github.com/kai-wegner/sharetribe.git
 WORKDIR /opt/app/sharetribe
 
